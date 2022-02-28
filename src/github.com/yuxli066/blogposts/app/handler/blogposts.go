@@ -45,8 +45,8 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 			tagQueries.Del("tag")
 			sb.WriteString(string(<-strReceiver))
 		}
-		// if query contains sortBy parameter, do something
-		// if query contains direction parameter, do something
+		// TODO: if query contains sortBy parameter, do something
+		// TODO: if query contains direction parameter, do something
 		respondJSON(w, http.StatusOK, sb)
 
 	}
