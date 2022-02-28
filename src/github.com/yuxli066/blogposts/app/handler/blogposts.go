@@ -1,14 +1,13 @@
 package handler
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"runtime"
 	"strings"
 	"sync"
-
-	"github.com/gorilla/mux"
 )
 
 // use wait groups here to run concurrent requests to hatchways api
@@ -20,12 +19,10 @@ func GetHealthCheck(w http.ResponseWriter, r *http.Request) {
 
 func GetPosts(w http.ResponseWriter, r *http.Request) {
 	runtime.GOMAXPROCS(100)
-	queryParameters := mux.Vars(r)
-	if _, ok := queryParameters["tags"]; !ok {
+	tags := r.URL.Query()["tags"]
+	if tags == nil {
 		respondError(w, http.StatusBadRequest, "Missing query parameter 'tags'")
 	} else {
-
-		tList := strings.Split(queryParameters["tags"], ",")
 		client := &http.Client{}
 		req, err := http.NewRequest(http.MethodGet, "https://api.hatchways.io/assessment/blog/posts", nil)
 		if err != nil {
@@ -38,21 +35,21 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 
 		// use string builder for response
 		var sb strings.Builder
-		for i := 0; i < len(tList); i++ {
+		for i := 0; i < len(tags); i++ {
 			wg.Add(1)
-			tagQueries.Add("tag", tList[i])
+			tagQueries.Add("tag", tags[i])
 			req.URL.RawQuery = tagQueries.Encode()
+			fmt.Println(req.URL)
+			m.Lock()
 			go getPostData(client, req, strReceiver, &wg)
 			tagQueries.Del("tag")
 			sb.WriteString(string(<-strReceiver))
-			m.Lock()
 		}
 		// if query contains sortBy parameter, do something
 		// if query contains direction parameter, do something
 		respondJSON(w, http.StatusOK, sb)
 
 	}
-	respondJSON(w, http.StatusOK, "Test status")
 }
 
 func getPostData(client *http.Client, request *http.Request, receiver chan<- []byte, wg *sync.WaitGroup) {
@@ -72,5 +69,6 @@ func getPostData(client *http.Client, request *http.Request, receiver chan<- []b
 	m.Unlock()
 	wg.Done()
 
+	fmt.Println(body)
 	receiver <- body
 }
