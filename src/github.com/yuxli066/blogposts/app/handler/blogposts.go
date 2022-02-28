@@ -1,10 +1,11 @@
 package handler
 
 import (
-	"fmt"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"runtime"
 	"strings"
 	"sync"
@@ -19,10 +20,12 @@ func GetHealthCheck(w http.ResponseWriter, r *http.Request) {
 
 func GetPosts(w http.ResponseWriter, r *http.Request) {
 	runtime.GOMAXPROCS(100)
-	tags := r.URL.Query()["tags"]
-	if tags == nil {
-		respondError(w, http.StatusBadRequest, "Missing query parameter 'tags'")
+	queryTags := r.URL.Query()["tags"]
+
+	if queryTags == nil {
+		respondError(w, http.StatusBadRequest, "Tags parameter is required")
 	} else {
+		tags := strings.Split(queryTags[0], ",")
 		client := &http.Client{}
 		req, err := http.NewRequest(http.MethodGet, "https://api.hatchways.io/assessment/blog/posts", nil)
 		if err != nil {
@@ -33,32 +36,33 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 		wg := sync.WaitGroup{}
 		strReceiver := make(chan []byte)
 
-		// use string builder for response
-		var sb strings.Builder
-		for i := 0; i < len(tags); i++ {
+		var data []byte // holds the return data from api call
+		for _, t := range tags {
 			wg.Add(1)
-			tagQueries.Add("tag", tags[i])
-			req.URL.RawQuery = tagQueries.Encode()
-			fmt.Println(req.URL)
 			m.Lock()
-			go getPostData(client, req, strReceiver, &wg)
-			tagQueries.Del("tag")
-			sb.WriteString(string(<-strReceiver))
+			go getPostData(client, req, strReceiver, &wg, &tagQueries, t)
+			data = <-strReceiver
 		}
 		// TODO: if query contains sortBy parameter, do something
 		// TODO: if query contains direction parameter, do something
-		respondJSON(w, http.StatusOK, sb)
 
+		// create map for result, unmarshal response from hatchway api
+		// and return to user
+		var resMap map[string]interface{}
+		json.Unmarshal(data, &resMap)
+		respondJSON(w, http.StatusOK, resMap)
 	}
 }
 
-func getPostData(client *http.Client, request *http.Request, receiver chan<- []byte, wg *sync.WaitGroup) {
+func getPostData(client *http.Client, request *http.Request, receiver chan<- []byte, wg *sync.WaitGroup, tagQueries *url.Values, tag string) {
+	tagQueries.Add("tag", tag)
+	request.URL.RawQuery = tagQueries.Encode()
 	response, err := client.Do(request)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer response.Body.Close()
+	defer tagQueries.Del("tag")
 
 	body, err := ioutil.ReadAll(response.Body)
 
@@ -69,6 +73,5 @@ func getPostData(client *http.Client, request *http.Request, receiver chan<- []b
 	m.Unlock()
 	wg.Done()
 
-	fmt.Println(body)
 	receiver <- body
 }
