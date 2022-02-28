@@ -15,7 +15,7 @@ import (
 var m = sync.RWMutex{}
 
 func GetHealthCheck(w http.ResponseWriter, r *http.Request) {
-	respondJSON(w, 200, map[string]bool{"success": true})
+	respondJSON(w, http.StatusOK, map[string]bool{"success": true})
 }
 
 func GetPosts(w http.ResponseWriter, r *http.Request) {

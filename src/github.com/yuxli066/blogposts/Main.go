@@ -6,5 +6,6 @@ import (
 
 func main() {
 	app := &app.App{}
-	app.Run(":8080")
+	app.Initialize()
+	app.Run(":3000")
 }

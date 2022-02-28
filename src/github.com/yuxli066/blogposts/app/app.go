@@ -14,6 +14,12 @@ type App struct {
 	Router *mux.Router
 }
 
+// Initialize server application
+func (a *App) Initialize() {
+	a.Router = mux.NewRouter()
+	a.setRouters()
+}
+
 // The setRouters function specifies different backend routes for the api
 func (a *App) setRouters() {
 	a.Get("/api/ping", a.handleRequest(handler.GetHealthCheck))
