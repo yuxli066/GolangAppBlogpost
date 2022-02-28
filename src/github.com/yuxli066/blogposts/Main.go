@@ -1,17 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"leo-blog-post/src/github.com/yuxli066/blogposts/app"
 )
 
 func main() {
-	http.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
-		fmt.Println([]byte("Hello Go!"))
-		rw.Write([]byte("Hello Go!"))
-	})
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		panic(err.Error())
-	}
+	app := &app.App{}
+	app.Run(":8080")
 }

@@ -22,8 +22,3 @@ func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
 func respondError(w http.ResponseWriter, code int, message string) {
 	respondJSON(w, code, map[string]string{"error": message})
 }
-
-// The healthCheck function performs a basic heart beat health check on this service
-func healthCheck(w http.ResponseWriter, status int, payload interface{}) {
-	respondJSON(w, status, map[string]bool{"success": status == 200})
-}

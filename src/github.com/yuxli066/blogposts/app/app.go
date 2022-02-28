@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"leo-blog-post/src/github.com/yuxli066/blogposts/app/handler"
+
 	"github.com/gorilla/mux"
 )
 
@@ -14,8 +16,8 @@ type App struct {
 
 // The setRouters function specifies different backend routes for the api
 func (a *App) setRouters() {
-	a.Get("/api/ping", a.handleRequest(handler.healthCheck))
-
+	a.Get("/api/ping", a.handleRequest(handler.GetHealthCheck))
+	a.Get("/api/posts", a.handleRequest(handler.GetPosts))
 }
 
 // HTTP CRUD wrapper function for HTTP GET
