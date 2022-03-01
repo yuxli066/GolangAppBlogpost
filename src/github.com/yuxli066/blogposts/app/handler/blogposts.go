@@ -17,6 +17,19 @@ import (
 // use wait groups here to run concurrent requests to hatchways api
 var m = sync.RWMutex{}
 
+// default sort by & sort direction values
+var sortByField string = "id"
+var sortDirectionField string = "asc"
+
+// constant string slices
+func getSortByFields() []string {
+	return []string{"id", "reads", "likes", "popularity"}
+}
+func getDirectionFields() []string {
+	return []string{"asc", "desc"}
+}
+
+// API Handler functions
 func GetHealthCheck(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, map[string]bool{"success": true})
 }
@@ -53,33 +66,27 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 			dataMap := make(map[string]interface{})
 			json.Unmarshal(data, &dataMap)
 			m.Lock()
-			go mergeMaps(mergedDataMap, dataMap, &wg)
+			go utils.MergeMaps(mergedDataMap, dataMap, &wg, &m)
 		}
 		wg.Wait() // wait for goroutines to finish executing
 
-		acceptedSortByFields := []string{"id", "reads", "likes", "popularity"}
-		acceptedDirectionFields := []string{"asc", "desc"}
-
-		// default sort by & sort direction values
-		sortByField := "id"
-		sortDirectionField := "asc"
-
 		// get sort by field & sort direction field
 		if querySortBy != nil {
-			if !utils.SliceContains(acceptedSortByFields, querySortBy[0]) {
+			if !utils.SliceContains(getSortByFields(), querySortBy[0]) {
 				respondError(w, http.StatusBadRequest, "The sortBy parameter must be id, reads, likes, or popularity")
 			}
 			sortByField = querySortBy[0]
 		}
 
 		if querySortDirection != nil {
-			if !utils.SliceContains(acceptedDirectionFields, querySortDirection[0]) {
+			if !utils.SliceContains(getDirectionFields(), querySortDirection[0]) {
 				respondError(w, http.StatusBadRequest, "The sortBy direction must be either asc or desc")
 			}
 			sortDirectionField = querySortDirection[0]
 		}
+
 		// sort results based on parameters
-		sort.Slice(mergedDataMap["posts"], customSort(mergedDataMap["posts"].([]interface{}), sortByField, sortDirectionField))
+		sort.Slice(mergedDataMap["posts"], utils.CustomSort(mergedDataMap["posts"].([]interface{}), sortByField, sortDirectionField))
 
 		// JSON response for api
 		respondJSON(w, http.StatusOK, mergedDataMap)
@@ -106,37 +113,4 @@ func getPostData(client *http.Client, request *http.Request, receiver chan<- []b
 	wg.Done()
 
 	receiver <- body
-}
-
-func mergeMaps(mergedMap map[string]interface{}, newMap map[string]interface{}, wg *sync.WaitGroup) {
-	if len(mergedMap) == 0 {
-		for k, v := range newMap { // deep copy new map to merged map
-			mergedMap[k] = v
-		}
-	} else {
-		newMapList := newMap["posts"].([]interface{})
-		for _, b := range newMapList {
-			switch t := b.(type) {
-			case map[string]interface{}:
-				if !utils.Contains(mergedMap["posts"].([]interface{}), t["id"]) {
-					mergedMap["posts"] = append(mergedMap["posts"].([]interface{}), b)
-				}
-				break
-			}
-		}
-	}
-	m.Unlock()
-	wg.Done()
-}
-
-type allPosts []interface{}
-
-func customSort(p allPosts, keyVal string, sortDirection string) func(int, int) bool {
-	return func(i, j int) bool {
-		if sortDirection == "asc" {
-			return p[i].(map[string]interface{})[keyVal].(float64) < p[j].(map[string]interface{})[keyVal].(float64)
-		} else {
-			return p[i].(map[string]interface{})[keyVal].(float64) > p[j].(map[string]interface{})[keyVal].(float64)
-		}
-	}
 }
