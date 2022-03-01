@@ -40,6 +40,8 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 
 		var data []byte // holds the return data from api call
 		mergedDataMap := make(map[string]interface{})
+
+		// Using wait groups and Mutexes to create concurrent http requests & data parsing
 		for _, t := range tags {
 			wg.Add(2)
 			m.Lock()
