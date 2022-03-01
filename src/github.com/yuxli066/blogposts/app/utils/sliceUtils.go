@@ -12,3 +12,12 @@ func Contains(mergedMap []interface{}, idNumber interface{}) bool {
 	}
 	return false
 }
+
+func SliceContains(sl []string, word string) bool {
+	for _, v := range sl {
+		if v == word {
+			return true
+		}
+	}
+	return false
+}
