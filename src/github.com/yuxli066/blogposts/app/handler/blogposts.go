@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+
+	"leo-blog-post/src/github.com/yuxli066/blogposts/app/utils"
 )
 
 // use wait groups here to run concurrent requests to hatchways api
@@ -37,20 +39,24 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 		strReceiver := make(chan []byte)
 
 		var data []byte // holds the return data from api call
+		mergedDataMap := make(map[string]interface{})
 		for _, t := range tags {
-			wg.Add(1)
+			wg.Add(2)
 			m.Lock()
 			go getPostData(client, req, strReceiver, &wg, &tagQueries, t)
 			data = <-strReceiver
+			dataMap := make(map[string]interface{})
+			json.Unmarshal(data, &dataMap)
+			m.Lock()
+			go mergeMaps(mergedDataMap, dataMap, &wg)
 		}
+		wg.Wait()
 		// TODO: if query contains sortBy parameter, do something
 		// TODO: if query contains direction parameter, do something
 
 		// create map for result, unmarshal response from hatchway api
 		// and return to user
-		var resMap map[string]interface{}
-		json.Unmarshal(data, &resMap)
-		respondJSON(w, http.StatusOK, resMap)
+		respondJSON(w, http.StatusOK, mergedDataMap)
 	}
 }
 
@@ -74,4 +80,25 @@ func getPostData(client *http.Client, request *http.Request, receiver chan<- []b
 	wg.Done()
 
 	receiver <- body
+}
+
+func mergeMaps(mergedMap map[string]interface{}, newMap map[string]interface{}, wg *sync.WaitGroup) {
+	if len(mergedMap) == 0 {
+		for k, v := range newMap { // deep copy new map to merged map
+			mergedMap[k] = v
+		}
+	} else {
+		newMapList := newMap["posts"].([]interface{})
+		for _, b := range newMapList {
+			switch t := b.(type) {
+			case map[string]interface{}:
+				if !utils.Contains(mergedMap["posts"].([]interface{}), t["id"]) {
+					mergedMap["posts"] = append(mergedMap["posts"].([]interface{}), b)
+				}
+				break
+			}
+		}
+	}
+	m.Unlock()
+	wg.Done()
 }
