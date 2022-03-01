@@ -50,3 +50,9 @@ func (a *App) handleRequest(handler RequestHandlerFunction) http.HandlerFunc {
 		handler(w, r)
 	}
 }
+
+// The GetHTTPHandler function returns the http handler for App
+// USED FOR TESTING PURPOSES ONLY
+func (a *App) GetHTTPHandler() http.Handler {
+	return a.Router
+}
