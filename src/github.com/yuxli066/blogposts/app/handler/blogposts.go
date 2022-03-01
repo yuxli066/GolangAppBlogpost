@@ -54,8 +54,7 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 		// TODO: if query contains sortBy parameter, do something
 		// TODO: if query contains direction parameter, do something
 
-		// create map for result, unmarshal response from hatchway api
-		// and return to user
+		// JSON response for api
 		respondJSON(w, http.StatusOK, mergedDataMap)
 	}
 }
