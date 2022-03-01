@@ -22,6 +22,8 @@ var sortByField string = "id"
 var sortDirectionField string = "asc"
 
 // constant string slices
+const hatchwaysAPI string = "https://api.hatchways.io/assessment/blog/posts"
+
 func getSortByFields() []string {
 	return []string{"id", "reads", "likes", "popularity"}
 }
@@ -45,9 +47,10 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	} else {
 		tags := strings.Split(queryTags[0], ",")
 		client := &http.Client{}
-		req, err := http.NewRequest(http.MethodGet, "https://api.hatchways.io/assessment/blog/posts", nil)
+		req, err := http.NewRequest(http.MethodGet, hatchwaysAPI, nil)
 		if err != nil {
 			log.Fatal(err)
+			respondError(w, http.StatusInternalServerError, "Hatchaway API Error")
 		}
 
 		tagQueries := req.URL.Query()
@@ -93,6 +96,7 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Makes API calls to hatchways api for blogposts payload
 func getPostData(client *http.Client, request *http.Request, receiver chan<- []byte, wg *sync.WaitGroup, tagQueries *url.Values, tag string) {
 	tagQueries.Add("tag", tag)
 	request.URL.RawQuery = tagQueries.Encode()
