@@ -77,6 +77,7 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 		if querySortBy != nil {
 			if !utils.SliceContains(getSortByFields(), querySortBy[0]) {
 				respondError(w, http.StatusBadRequest, "The sortBy parameter must be id, reads, likes, or popularity")
+				return
 			}
 			sortByField = querySortBy[0]
 		}
@@ -84,6 +85,7 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 		if querySortDirection != nil {
 			if !utils.SliceContains(getDirectionFields(), querySortDirection[0]) {
 				respondError(w, http.StatusBadRequest, "The sortBy direction must be either asc or desc")
+				return
 			}
 			sortDirectionField = querySortDirection[0]
 		}
