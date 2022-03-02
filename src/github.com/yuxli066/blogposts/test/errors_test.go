@@ -1,4 +1,4 @@
-package errors_test
+package test
 
 import (
 	"net/http"
@@ -10,15 +10,8 @@ import (
 	"github.com/gavv/httpexpect/v2"
 )
 
-type testCases []struct {
-	result  string
-	queries query
-}
-
-type query map[string]interface{}
-
 // Error Test Cases
-var tcs testCases = testCases{
+var error_tcs errorTestCases = errorTestCases{
 	{
 		result:  "Tags parameter is required",
 		queries: nil,
@@ -54,7 +47,7 @@ func TestErrorHandling(t *testing.T) {
 	// base path
 	basePath := "/api/posts"
 
-	for _, v := range tcs {
+	for _, v := range error_tcs {
 		if v.queries != nil {
 			s.GET(basePath).WithQueryObject(v.queries).Expect().Status(http.StatusBadRequest).JSON().Object().ContainsKey("error").ValueEqual("error", v.result)
 		} else {
