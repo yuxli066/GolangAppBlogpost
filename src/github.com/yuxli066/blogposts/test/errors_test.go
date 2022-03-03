@@ -30,6 +30,14 @@ var error_tcs errorTestCases = errorTestCases{
 			"direction": "nil",
 		},
 	},
+	{
+		result: "The sortBy parameter must be id, reads, likes, or popularity",
+		queries: query{
+			"tags":      "tech",
+			"sortBy":    "nil",
+			"direction": "nil",
+		},
+	},
 }
 
 func TestErrorHandling(t *testing.T) {
