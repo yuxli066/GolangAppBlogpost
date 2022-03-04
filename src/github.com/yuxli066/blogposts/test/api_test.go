@@ -157,14 +157,14 @@ var api_tcs apiTestCases = apiTestCases{
 			"tags":      "tech,history,startups",
 		},
 	},
-	// {
-	// 	testName: "test api tags tech,history,startups return correct results (correct tags)",
-	// 	url:    "/api/posts",
-	// 	result: []string{"history"},
-	// 	queries: query{
-	// 		"tags":      "history",
-	// 	},
-	// },
+	{
+		testName: "test api tags tech,history,startups return correct results (correct tags)",
+		url:    "/api/posts",
+		result: []string{"history"},
+		queries: query{
+			"tags":      "history",
+		},
+	},
 }
 
 func TestAPIFunctionality(t *testing.T) {
